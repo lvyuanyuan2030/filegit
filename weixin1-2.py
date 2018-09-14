@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-#通过搜狗搜索中的微信搜索入口来爬取公共号文章，用csv存储为cvs格式文件
+#通过搜狗搜索中的微信搜索入口来爬取公共号文章，用csv存储所有文章信息为cvs格式文件+存储所有文章内容为html格式
 
 #get_selenium_js_html：获取公共号首页内容，用的是webdriver.PhantomJS，前提是selenium为老版本2，换其他浏览器再试试
 
@@ -61,21 +61,29 @@ class weixin_spider:
 		browser = webdriver.PhantomJS() 
 		browser.get(url) 
 		time.sleep(3) 
+
 		#以下两种方式
 		# 执行js得到整个页面内容 为什么不行??
 		#html = browser.execute_script("return document.documentElement.outerHTML") 
+
 		#直接通过page_source获取网页渲染后的源代码
 		html = browser.page_source
 		return html
 
 	#获取公众号文章内容
 	def parse_wx_articles_by_html(self, selenium_html):
+		#以下两种方式
+		#beautifulsoup，得到的是list，一块div内容，switch_arctiles_to_list里无法继续搜索？
+		#soup = BeautifulSoup(selenium_html,'html.parser')
+		#return soup.select('div[class="weui_media_box appmsg"]')
+
+		#pyquery
 		doc = pq(selenium_html)
 		print '开始查找内容'
 		#有的公众号仅仅有10篇文章，有的可能多一些
 		return doc('div[class="weui_media_box appmsg"]')#公众号多余10篇文章的
 		#return doc('div[class="weui_msg_card"]')	#公众号只有10篇文章的
- 
+ 		
 	#将获取到的文章转换为字典，并向csv文件写入行
 	def switch_arctiles_to_list(self, articles,writer):
 		#定义存贮变量
@@ -126,7 +134,7 @@ class weixin_spider:
 	def save_content_file(self,title,content):
 		#防止有的文章内容被举报或删除了，content为空，加上if判断
 		if content:
-			with open(title, 'w') as f:
+			with open(title, 'a') as f:
 				f.write(content)
 		else:
 			print '''
@@ -135,13 +143,12 @@ class weixin_spider:
 			*****************************************
 			'''
 	
-	#存贮csv数据到本地 ??没用，还要传出来
+	#存贮csv数据到本地
 	def save_csvfile(self):
-		#with open("gongzhonghao2.csv","w") as csvfile:
-		csvfile = open("gongzhonghao2.csv","w")
-		writer = csv.writer(csvfile)
-		writer.writerow([u'编号',u'时间',u'文章标题',u'文章地址',u'文章简介'])
-    		
+		with open("gongzhonghao2.csv","w") as csvfile:
+			writer = csv.writer(csvfile)
+			writer.writerow([u'编号',u'时间',u'文章标题',u'文章地址',u'文章简介'])
+    		return writer
 	
 	#自定义log函数，主要是加上时间
 	def log(self, msg):
@@ -152,7 +159,7 @@ class weixin_spider:
 		' 有时候对方会封锁ip，这里做一下判断，检测html中是否包含id=verify_change的标签，有的话，代表被重定向了，提醒过一阵子重试 '
 		return pq(selenium_html)('#verify_change').text() != ''
 	
-	#创建公众号命名的文件夹	 为什么不用指定路径？
+	#创建公众号命名的文件夹	 不用指定路径，默认在python存放路径？
 	def create_dir(self):
 		if not os.path.exists(self.keywords):  
 			os.makedirs(self.keywords) 
@@ -164,15 +171,9 @@ class weixin_spider:
 	#爬虫主函数
 	def run(self):
 		' 爬虫入口函数 '
-		#Step 0 ：  创建公众号命名的文件夹
+		#Step 0 ：  创建公众号命名的文件夹，创建csv文件
 		self.create_dir()
-
-		#self.save_csvfile()
-
-		with open("gongzhonghao2.csv","a") as csvfile:
-		#csvfile = open("gongzhonghao2.csv","w")
-			writer = csv.writer(csvfile)
-			writer.writerow([u'编号',u'时间',u'文章标题',u'文章地址',u'文章简介'])
+		writer = self.save_csvfile()
 		
 		# Step 1：GET请求到搜狗微信引擎，以微信公众号英文名称作为查询关键字
 		self.log(u'开始获取，微信公众号英文名为：%s' % self.keywords)
@@ -187,7 +188,6 @@ class weixin_spider:
 		# Step 3：Selenium+PhantomJs获取js异步加载渲染后的html
 		self.log(u'开始调用selenium渲染html')
 		selenium_html = self.get_selenium_js_html(wx_url)
-		print selenium_html
 	
 		# Step 4: 检测目标网站是否进行了封锁
 		if self.need_verify(selenium_html):
@@ -196,22 +196,19 @@ class weixin_spider:
 			# Step 5: 使用PyQuery，从Step 3获取的html中解析出公众号文章列表的数据
 			self.log(u'调用selenium渲染html完成，开始解析公众号文章')
 			articles = self.parse_wx_articles_by_html(selenium_html)
-			
 			self.log(u'抓取到微信文章%d篇' % len(articles))
-			
+
 			# Step 6: 把微信文章数据存储为csv文件
 			self.log(u'开始整合微信文章数据为csv文件')
 			self.switch_arctiles_to_list(articles,writer)
 			
-			# Step 7: 关闭csv文件
-			#csvfile.close()
 			self.log(u'保存完成，程序结束')
 
 # main
 if __name__ == '__main__':
 	print '''
 			***************************************** 
-			**    Welcome to Spider of 公众号       ** 
+			**    Welcome to Spider of 微信公众号       ** 
 			*****************************************
 	'''
 	gongzhonghao=raw_input(u'输入要爬取的公众号')

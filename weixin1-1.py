@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-#通过搜狗搜索中的微信搜索入口来爬取公共号文章，用pandas存储为cvs格式文件
+#通过搜狗搜索中的微信搜索入口来爬取公共号文章，用pandas存储所有文章信息为cvs格式文件+存储所有文章正文内容为txt文本
+#用pandas方式存储csv文件，是字典方式，而字典是无序的，所以列的顺序不是按照字典顺序放的，是随机的
 
 #get_selenium_js_html：获取公共号首页内容，用的是webdriver.PhantomJS，前提是selenium为老版本2，换其他浏览器再试试
 
@@ -64,12 +65,19 @@ class weixin_spider:
 		#以下两种方式
 		# 执行js得到整个页面内容 为什么不行??
 		#html = browser.execute_script("return document.documentElement.outerHTML") 
+
 		#直接通过page_source获取网页渲染后的源代码
 		html = browser.page_source
 		return html
 
 	#获取公众号文章内容
 	def parse_wx_articles_by_html(self, selenium_html):
+		#以下两种方式
+		#beautifulsoup，得到的是list，一块div内容，switch_arctiles_to_list里无法继续搜索，不适用？
+		#soup = BeautifulSoup(selenium_html,'html.parser')
+		#return soup.select('div[class="weui_media_box appmsg"]')
+
+		#pyquery
 		doc = pq(selenium_html)
 		print '开始查找内容'
 		#有的公众号仅仅有10篇文章，有的可能多一些
@@ -194,7 +202,6 @@ class weixin_spider:
 		# Step 3：Selenium+PhantomJs获取js异步加载渲染后的html
 		self.log(u'开始调用selenium渲染html')
 		selenium_html = self.get_selenium_js_html(wx_url)
-		print selenium_html
 	
 		# Step 4: 检测目标网站是否进行了封锁
 		if self.need_verify(selenium_html):
@@ -203,7 +210,6 @@ class weixin_spider:
 			# Step 5: 使用PyQuery，从Step 3获取的html中解析出公众号文章列表的数据
 			self.log(u'调用selenium渲染html完成，开始解析公众号文章')
 			articles = self.parse_wx_articles_by_html(selenium_html)
-			
 			self.log(u'抓取到微信文章%d篇' % len(articles))
 			
 			# Step 6: 把微信文章数据封装成csv文件
