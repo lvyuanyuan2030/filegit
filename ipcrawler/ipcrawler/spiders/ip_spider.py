@@ -17,7 +17,6 @@ from bs4 import BeautifulSoup
 class IPSpider(scrapy.Spider):	#没有使用RedisSpider类
 	name = 'ipcrawler'
 
-	num_url = 0
 	nexturlnum_dict = {}
 	text_dict ={}
 	comm_ports_list = [80,8080,443]	#常用端口列表
@@ -30,20 +29,21 @@ class IPSpider(scrapy.Spider):	#没有使用RedisSpider类
 		self.nexturlnum_dict = self.nexturlnum_dict.fromkeys(list(range(1,len(realiplist))),0)
 		self.text_dict = self.text_dict.fromkeys(list(range(1,len(realiplist))),'')
 
+		ID = 0
 		for ip in realiplist: 
 			for port in self.comm_ports_list:
+				ID += 1
 				if port != 443:
 					url = 'http://'+ str(ip)+':'+ str(port)
 				else:
 					url = "https://"+ str(ip)
-				yield Request(url, callback=self.parse, meta={'ip':ip,'port':port})
+				yield Request(url, callback=self.parse, meta={'ip':ip,'port':port,'ID':ID})
 
 	def parse(self, response):
 		item = IpcrawlerItem()
 		if response.status == 200:
 			#ID
-			self.num_url += 1
-			ID = self.num_url
+			ID = response.meta['ID']
 			item['ID'] = ID
 
 			#url,buyong response.url
@@ -127,7 +127,7 @@ class IPSpider(scrapy.Spider):	#没有使用RedisSpider类
 
 		#self.write_csvhead()
 
-		data=xlrd.open_workbook('/home/lyy/ipconn/IP.xlsx')
+		data=xlrd.open_workbook('/home/deepctrl/Desktop/IPproject/IPgit/IP.xlsx')
 		sheet = data.sheets()[0]
 		
 		for i in range(sheet.nrows):

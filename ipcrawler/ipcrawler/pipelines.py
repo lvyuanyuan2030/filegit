@@ -35,7 +35,7 @@ class IpcrawlerPipeline(object):
 		
 			try:
 				#连接MySQL
-				con = MySQLdb.connect(host='localhost',user='root',passwd='123456',db='IPs',charset='utf8')
+				con = MySQLdb.connect(host='localhost',user='root',passwd='deepctrl',db='IPs',charset='utf8')
 				cur = con.cursor()
 				con.set_character_set('utf8')
 
@@ -80,7 +80,7 @@ class IpcrawlerPipeline(object):
 
 			try:
 				#连接MySQL
-				con = MySQLdb.connect(host='localhost',user='root',passwd='123456',db='IPs',charset='utf8')
+				con = MySQLdb.connect(host='localhost',user='root',passwd='deepctrl',db='IPs',charset='utf8')
 				cur = con.cursor()
 				con.set_character_set('utf8')
 
