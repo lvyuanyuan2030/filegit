@@ -43,10 +43,10 @@ class IpcrawlerPipeline(object):
 				if firsttime:
 					firsttime = False 
 					cur.execute("drop table if exists validIP")
-					cur.execute("create table validIP(%s) default charset = utf8" %('ID VARCHAR(500),url VARCHAR(500),title VARCHAR(500),ICP VARCHAR(500),keywords VARCHAR(500)'))
+					cur.execute("create table validIP(%s) default charset = utf8" %('ID VARCHAR(500),url VARCHAR(500),title VARCHAR(500),ICP VARCHAR(500),maxnum_nexturls VARCHAR(500),keywords VARCHAR(500)'))
 				#插入表
 				try:
-					sql = "INSERT INTO validIP VALUES ('%s','%s','%s','%s','%s')"%(ID,url,title,ICP,keywords)
+					sql = "INSERT INTO validIP VALUES ('%s','%s','%s','%s','%s','%s')"%(ID,url,title,ICP,maxnum_nexturls,keywords)
 					cur.execute(sql) 
 					#提交
 					con.commit() 
